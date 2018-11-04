@@ -1,0 +1,25 @@
+[ {
+  "competition_id" : 37,
+  "season_id" : 4,
+  "country_name" : "England",
+  "competition_name" : "FA Women's Super League",
+  "season_name" : "2018/2019",
+  "match_updated" : "2018-11-03T10:30:08.881194",
+  "match_available" : "2018-11-02T20:34:01.732765"
+}, {
+  "competition_id" : 43,
+  "season_id" : 3,
+  "country_name" : "International",
+  "competition_name" : "FIFA World Cup",
+  "season_name" : "2018",
+  "match_updated" : "2018-10-31T21:28:32.325274",
+  "match_available" : "2018-10-31T21:28:32.325274"
+}, {
+  "competition_id" : 49,
+  "season_id" : 3,
+  "country_name" : "United States of America",
+  "competition_name" : "NWSL",
+  "season_name" : "2018",
+  "match_updated" : "2018-10-16T21:48:46.267",
+  "match_available" : "2018-10-16T21:48:46.267"
+} ]
