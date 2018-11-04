@@ -17,7 +17,6 @@ knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.path='Figs/',
                       warning=FALSE, message=FALSE)
 ```
 
-
 ```{r Preamble, echo=FALSE}
 # Enter package in p_load()
 # If package is not installed, p_load() will install and load the package
