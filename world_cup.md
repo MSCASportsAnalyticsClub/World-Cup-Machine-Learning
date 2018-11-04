@@ -1,61 +1,34 @@
----
-title: "World Cup"
-author: "MsCA Sports Analytics"
-date: "`r format(Sys.time(), '%B, %d %Y')`"
-always_allow_html: yes
-output:
-  github_document: 
-  pdf_document: default
-editor_options: 
-  chunk_output_type: inline
----
-
-```{r Global-options, include=FALSE}
-knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.path='Figs/',
-                      warning=FALSE, message=FALSE, cache=TRUE)
-```
-
-```{r Preamble, echo=FALSE}
-# Enter package in p_load()
-# If package is not installed, p_load() will install and load the package
-if(!"pacman" %in% rownames(installed.packages())) {
-  install.packages("pacman")
-  }
-pacman::p_load(tidyverse, ggthemes, here, jsonlite)
-
-options(stringsAsFactors = FALSE)
-
-# Set default ggplot theme to tufte
-theme_set(ggthemes::theme_tufte())
-```
-
-```{r Copy-files, echo=FALSE, eval=FALSE}
-# Enter files to load to project directory in from = "~/Downloads/your_file_name_here"
-file.copy(from = "~/Downloads/", to = here::here(), 
-          overwrite = TRUE, recursive = FALSE, 
-          copy.mode = TRUE)
-```
+World Cup
+================
+MsCA Sports Analytics
+November, 04 2018
 
 # Overview
 
 Models will be built to focus on the following tasks:
 
-* Expected goals: all passes that end in a shot
+  - Expected goals: all passes that end in a shot
 
-* Expected possession: all possession for a team
+  - Expected possession: all possession for a team
 
-* Pass map
+  - Pass map
 
 # Data
 
-All the data for the three models exists in `data/events/19714.json`. `19714` represents one game. The events folder has events for all games. There are corresponding `matches` and `lineups` data sets that tie back to the events. We will focus primarily on `events` for now
+All the data for the three models exists in `data/events/19714.json`.
+`19714` represents one game. The events folder has events for all games.
+There are corresponding `matches` and `lineups` data sets that tie back
+to the events. We will focus primarily on `events` for
+now
 
-```{r Data}
+``` r
 events_json <- fromJSON("data/events/19714.json", simplifyVector = FALSE)
 ```
 
-Parse `events_json` to extract relevant data for **expected goals** model.
-```{r Extract-data}
+Parse `events_json` to extract relevant data for **expected goals**
+model.
+
+``` r
 replace_na_empty <- function(x) {
   map_if(x, is.null, ~ NA)
 }
@@ -93,7 +66,7 @@ goalkeeper_outcome_name <- map(events_json, ~ .x$goalkeeper$outcome$name) %>%
   replace_na_empty() %>% unlist()
 ```
 
-```{r events-df}
+``` r
 events_df <- data.frame(
     event_id,
     type_id,
@@ -114,43 +87,21 @@ events_df <- data.frame(
   as_tibble()
 ```
 
+Check index of all shots and then look back to see what lead to a
+    shot.
 
-```{r related-events-df, eval=FALSE, echo=FALSE}
-related_events_df <- set_names(map(events_json, ~ .x$related_events), event_id) %>% 
-  enframe()
-
-related_events_list <- related_events_df$value %>% map(., function(x) {
-  if (is.null(x)) {
-    "no event"
-  } else {
-    x
-  }
-})
-
-related_events_count <- map(related_events_list, ~ length(.x)) %>% unlist()
-related_events <- related_events_list %>% unlist()
-
-related_events_df <- data.frame(main_event_id = rep(event_id, related_events_count), related_event_id = related_events)
-
-related_events_test <- related_events_df %>%
-  left_join(events_df, by = c("main_event_id" = "event_id")) %>% 
-  left_join(events_df, by = c("related_event_id" = "event_id"), suffix = c("_main_event", "_related_event"))
-
-related_events_test %>% 
-  filter(str_detect(type_name_main_event, "Pass"))
-
-related_events_test %>% 
-  semi_join(events_df %>% filter(str_detect(type_name, "Shot")), by = c("main_event_id" = "event_id")) %>% 
-  count(type_name_main_event, type_name_related_event)
-```
-
-Check index of all shots and then look back to see what lead to a shot.
-```{r}
+``` r
 (shot_indexes <- which(str_detect(events_df$type_name, "Shot")))
 ```
 
-Pass sequences are defined as uninterrupted possession leading to a shot.
-```{r pass-sequences}
+    ##  [1]   58  198  233  640  649  741  787 1073 1150 1173 1281 1300 1424 1529
+    ## [15] 1685 1739 1831 1856 1862 1883 1908 1988 2075 2088 2153 2166 2169 2174
+    ## [29] 2445 2642 2716
+
+Pass sequences are defined as uninterrupted possession leading to a
+shot.
+
+``` r
 sequence_indexes <- vector("list", length(shot_indexes))
 
 for (i in seq_along(shot_indexes)) {
@@ -185,14 +136,50 @@ pass_sequences %>%
   distinct(pass_sequence_label, goal)
 ```
 
-```{r Show-data}
+    ## # A tibble: 31 x 2
+    ## # Groups:   pass_sequence_label [31]
+    ##    pass_sequence_label goal 
+    ##    <fct>               <chr>
+    ##  1 1                   saved
+    ##  2 2                   saved
+    ##  3 3                   saved
+    ##  4 4                   saved
+    ##  5 5                   saved
+    ##  6 6                   saved
+    ##  7 7                   saved
+    ##  8 8                   saved
+    ##  9 9                   saved
+    ## 10 10                  saved
+    ## # ... with 21 more rows
+
+``` r
 pass_sequences %>% 
   group_by(pass_sequence_label) %>% 
   slice(1:6) %>% 
   select(pass_sequence_label, everything())
 ```
 
-```{r Plot}
+    ## # A tibble: 180 x 16
+    ## # Groups:   pass_sequence_label [31]
+    ##    pass_sequence_l… event_id type_id type_name timestamp duration team_name
+    ##    <fct>            <chr>      <int> <chr>     <chr>        <dbl> <chr>    
+    ##  1 1                26973b6…       9 Clearance 00:00:45…    0     Manchest…
+    ##  2 1                eb189dd…       2 Ball Rec… 00:00:47…    0     Manchest…
+    ##  3 1                2dc12a7…      39 Dribbled… 00:00:47…    0     Chelsea …
+    ##  4 1                5fcba4e…      14 Dribble   00:00:47…    0     Manchest…
+    ##  5 1                9a305bf…      17 Pressure  00:00:48…    0.409 Chelsea …
+    ##  6 1                8828286…      30 Pass      00:00:49…    0.395 Manchest…
+    ##  7 2                ae2c5e0…      42 Ball Rec… 00:04:24…   NA     Manchest…
+    ##  8 2                f1e6140…      10 Intercep… 00:04:24…    0     Chelsea …
+    ##  9 2                f1d3bc5…      17 Pressure  00:04:27…    0.229 Manchest…
+    ## 10 2                355302d…      30 Pass      00:04:27…    1.16  Chelsea …
+    ## # ... with 170 more rows, and 9 more variables:
+    ## #   possession_team_name <chr>, play_pattern_name <chr>,
+    ## #   pass_length <dbl>, pass_height <chr>, pass_angle <dbl>,
+    ## #   goalkeeper_type_name <chr>, goalkeeper_outcome_name <chr>,
+    ## #   lead_possessor <lgl>, goal <chr>
+
+``` r
 pass_sequences %>% 
   group_by(pass_sequence_label) %>% 
   count() %>% 
@@ -201,7 +188,11 @@ pass_sequences %>%
   labs(title = "Event Count by Pass Sequence",
        x = "Pass Sequence",
        y = "Count")
+```
 
+![](Figs/Plot-1.png)<!-- -->
+
+``` r
 pass_sequences %>% 
   count(pass_sequence_label, type_name) %>% 
   filter(type_name == "Pass") %>% 
@@ -212,17 +203,4 @@ pass_sequences %>%
        y = "Count")
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+![](Figs/Plot-2.png)<!-- -->
