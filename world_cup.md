@@ -1,8 +1,3 @@
----
-output:
-  pdf_document: default
-  html_document: default
----
 World Cup
 ================
 MsCA Sports Analytics
@@ -135,7 +130,8 @@ pass_sequences <-
     type_name = ifelse(type_name == "Goal Keeper", goalkeeper_type_name, type_name)
   ) %>%
   group_by(pass_sequence_label) %>%
-  # Need to account for shots that were block by someone other than the goal keeper when identifying outcome of shot
+  # Need to account for shots that were block by someone 
+  # other than the goal keeper when identifying outcome of shot
   mutate(goal = ifelse(
     str_detect(
       goalkeeper_outcome_name,

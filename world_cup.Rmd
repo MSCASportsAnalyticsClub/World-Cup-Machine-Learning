@@ -3,11 +3,10 @@ title: "World Cup"
 author: "MsCA Sports Analytics"
 date: "`r format(Sys.time(), '%B, %d %Y')`"
 output:
+  github_document: null
   pdf_document: default
   html_document:
     df_print: paged
-  markdown_document: default
-  github_document: null
 editor_options:
   chunk_output_type: inline
 always_allow_html: yes
