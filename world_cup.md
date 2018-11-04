@@ -121,14 +121,22 @@ start_sequence <- map_int(shots_split, function(x) {
   }
 ) 
 
-pass_sequences <- map2(shots_split, start_sequence, ~ .x %>% slice(.y:nrow(.x))) %>% 
-  map2(., 1:length(shots_split), ~ mutate(.x, pass_sequence_label = .y)) %>% 
-  bind_rows() %>% 
-  mutate(pass_sequence_label = factor(pass_sequence_label),
-         type_name = ifelse(type_name == "Goal Keeper", goalkeeper_type_name, type_name)) %>% 
-  group_by(pass_sequence_label) %>% 
+pass_sequences <-
+  map2(shots_split, start_sequence, ~ .x %>% slice(.y:nrow(.x))) %>%
+  map2(., 1:length(shots_split), ~ mutate(.x, pass_sequence_label = .y)) %>%
+  bind_rows() %>%
+  mutate(
+    pass_sequence_label = factor(pass_sequence_label),
+    type_name = ifelse(type_name == "Goal Keeper", goalkeeper_type_name, type_name)
+  ) %>%
+  group_by(pass_sequence_label) %>%
   # Need to account for shots that were block by someone other than the goal keeper when identifying outcome of shot
-  mutate(goal = ifelse(str_detect(goalkeeper_outcome_name, "Goal Conceded|Penalty Conceded|No Touch|Touched In"), "goal conceded", "saved"))
+  mutate(goal = ifelse(
+    str_detect(
+      goalkeeper_outcome_name,
+      "Goal Conceded|Penalty Conceded|No Touch|Touched In"
+      ), "goal conceded", "saved"
+  ))
 
 pass_sequences %>% 
   select(pass_sequence_label, type_name, goalkeeper_outcome_name, goal) %>% 
