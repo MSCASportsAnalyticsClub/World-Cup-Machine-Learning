@@ -174,8 +174,7 @@ start_sequence <- map_int(shots_split, function(x) {
   }
 ) 
 
-pass_sequences <-
-  map2(shots_split, start_sequence, ~ .x %>% slice(.y:nrow(.x))) %>%
+pass_sequences <- map2(shots_split, start_sequence, ~ .x %>% slice(.y:nrow(.x))) %>%
   map2(., 1:length(shots_split), ~ mutate(.x, pass_sequence_label = .y)) %>%
   bind_rows() %>%
   mutate(
