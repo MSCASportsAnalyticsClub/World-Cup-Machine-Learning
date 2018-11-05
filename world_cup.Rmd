@@ -53,7 +53,7 @@ Models will be built to focus on the following tasks:
 All the data for the three models exists in `data/events/19714.json`. `19714` represents one game. The events folder has events for all games. There are corresponding `matches` and `lineups` data sets that tie back to the events. We will focus primarily on `events` for now
 
 ```{r Data}
-events_json <- fromJSON("data/events/19714.json", simplifyVector = FALSE)
+events_json <- fromJSON("data/events/19725.json", simplifyVector = FALSE)
 ```
 
 Parse `events_json` to extract relevant data for **expected goals** model.
@@ -184,17 +184,18 @@ pass_sequences <- map2(shots_split, start_sequence, ~ .x %>% slice(.y:nrow(.x)))
   group_by(pass_sequence_label) %>%
   # Need to account for shots that were block by someone 
   # other than the goal keeper when identifying outcome of shot
-  mutate(goal = ifelse(
-    str_detect(
-      goalkeeper_outcome_name,
-      "Goal Conceded|Penalty Conceded|No Touch|Touched In"
-      ), "goal conceded", "saved"
+  mutate(goals = case_when(
+        str_detect(goalkeeper_outcome_name, "Goal Conceded|Penalty Conceded|No Touch|Touched In") ~ "goal conceded",
+        str_detect(goalkeeper_type_name, "Shot Faced") & lag(type_name) == "Shot" ~ "missed shot", 
+        is.na(goalkeeper_outcome_name) & is.na(goalkeeper_type_name) ~ NA_character_,
+        lag(type_name) != "Shot" | is.na(lag(type_name)) ~ NA_character_,
+        TRUE ~ "saved"
   ))
 
 pass_sequences %>% 
-  select(pass_sequence_label, type_name, goalkeeper_outcome_name, goal) %>% 
-  mutate_at(vars(goal), ~ ifelse(is.na(.x), "saved", .x)) %>% 
-  distinct(pass_sequence_label, goal)
+  select(pass_sequence_label, type_name, goalkeeper_outcome_name, goals) %>% 
+  filter(!is.na(goals)) %>% 
+  distinct(pass_sequence_label, goals)
 ```
 
 ```{r Show-data}
