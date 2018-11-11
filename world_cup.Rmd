@@ -50,7 +50,7 @@ Models will be built to focus on the following tasks:
 
 # Data
 
-All the data for the three models exists in `data/events/19714.json`. `19714` represents one game. The events folder has events for all games. There are corresponding `matches` and `lineups` data sets that tie back to the events. We will focus primarily on `events` for now
+All the data for the three models exists in `data/events/19714.json`. `19714` represents one game. The events folder has events for all games. There are corresponding `matches` and `lineups` data sets that tie back to the events. We will focus primarily on `events` for now.
 
 ```{r Data}
 events_json <- fromJSON("data/events/19725.json", simplifyVector = FALSE)
