@@ -116,36 +116,6 @@ events_df <- data.frame(
   as_tibble()
 ```
 
-
-```{r related-events-df, eval=FALSE, echo=FALSE}
-related_events_df <- set_names(map(events_json, ~ .x$related_events), event_id) %>% 
-  enframe()
-
-related_events_list <- related_events_df$value %>% map(., function(x) {
-  if (is.null(x)) {
-    "no event"
-  } else {
-    x
-  }
-})
-
-related_events_count <- map(related_events_list, ~ length(.x)) %>% unlist()
-related_events <- related_events_list %>% unlist()
-
-related_events_df <- data.frame(main_event_id = rep(event_id, related_events_count), related_event_id = related_events)
-
-related_events_test <- related_events_df %>%
-  left_join(events_df, by = c("main_event_id" = "event_id")) %>% 
-  left_join(events_df, by = c("related_event_id" = "event_id"), suffix = c("_main_event", "_related_event"))
-
-related_events_test %>% 
-  filter(str_detect(type_name_main_event, "Pass"))
-
-related_events_test %>% 
-  semi_join(events_df %>% filter(str_detect(type_name, "Shot")), by = c("main_event_id" = "event_id")) %>% 
-  count(type_name_main_event, type_name_related_event)
-```
-
 Check index of all shots and then look back to see what lead to a shot.
 ```{r}
 (shot_indexes <- which(str_detect(events_df$type_name, "Shot")))
