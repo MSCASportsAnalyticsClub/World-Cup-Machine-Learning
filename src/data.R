@@ -12,7 +12,10 @@ options(stringsAsFactors = FALSE)
 theme_set(ggthemes::theme_tufte())
 
 ## ----Data----------------------------------------------------------------
-events_json <- fromJSON("data/events/19725.json", simplifyVector = FALSE)
+
+game_num <- "19725"
+events_json <- fromJSON(paste0("data/events/", game_num, ".json"),
+  simplifyVector = FALSE)
 
 ## ----Extract-data--------------------------------------------------------
 replace_na_empty <- function(x) {
@@ -51,6 +54,39 @@ goalkeeper_type_name <- map(events_json, ~ .x$goalkeeper$type$name) %>%
 goalkeeper_outcome_name <- map(events_json, ~ .x$goalkeeper$outcome$name) %>%
   replace_na_empty() %>% unlist()
 
+locations <- map(events_json, ~ .x$location) %>%
+  replace_na_empty()
+
+loc_x <- map(locations, ~ .x[[1]]) %>%
+  unlist()
+
+loc_y <- map(locations, ~ .x[[1]]) %>%
+  unlist()
+
+shot_end_locs <- map(events_json, ~ .x$shot$end_location) %>%
+  replace_na_empty()
+
+shot_x <- map(shot_end_locs, ~ .x[[1]]) %>%
+  unlist()
+
+shot_y <- map(shot_end_locs, ~ ifelse(length(.x)>1,.x[[2]],NA)) %>%
+  unlist()
+
+shot_z <- map(shot_end_locs, ~ ifelse(length(.x)>2,.x[[3]],NA)) %>%
+  unlist()
+
+shot_body_part <- map(events_json, ~ .x$shot$body_part$name) %>%
+  replace_na_empty() %>%
+  unlist()
+
+shot_technique <- map(events_json, ~ .x$shot$technique$name) %>%
+  replace_na_empty() %>%
+  unlist()
+
+shot_outcome <- map(events_json, ~.x$shot$outcome$name) %>%
+  replace_na_empty() %>%
+  unlist()
+
 ## ----events-df-----------------------------------------------------------
 events_df <- data.frame(
     event_id,
@@ -65,7 +101,13 @@ events_df <- data.frame(
     pass_height,
     pass_angle,
     goalkeeper_type_name,
-    goalkeeper_outcome_name
+    goalkeeper_outcome_name,
+    loc_x,
+    loc_y,
+    shot_x,
+    shot_y,
+    shot_z,
+    shot_body_part
   ) %>%
   #' Used to identify sequences; max `FALSE` value is the start of a sequence
   mutate(lead_possessor = possession_team_name == lead(possession_team_name)) %>%
