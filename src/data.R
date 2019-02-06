@@ -107,7 +107,9 @@ events_df <- data.frame(
     shot_x,
     shot_y,
     shot_z,
-    shot_body_part
+    shot_body_part,
+    shot_technique,
+    shot_outcome
   ) %>%
   #' Used to identify sequences; max `FALSE` value is the start of a sequence
   mutate(lead_possessor = possession_team_name == lead(possession_team_name)) %>%
