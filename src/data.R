@@ -60,7 +60,7 @@ locations <- map(events_json, ~ .x$location) %>%
 loc_x <- map(locations, ~ .x[[1]]) %>%
   unlist()
 
-loc_y <- map(locations, ~ .x[[1]]) %>%
+loc_y <- map(locations, ~ ifelse(length(.x)>1, .x[[2]], NA)) %>%
   unlist()
 
 shot_end_locs <- map(events_json, ~ .x$shot$end_location) %>%
