@@ -1,7 +1,4 @@
-# 0.0-Initial Work.R
-
-options(stringsAsFactors = FALSE)
-
+## ----Preamble, echo=FALSE------------------------------------------------
 # Enter package in p_load()
 # If package is not installed, p_load() will install and load the package
 if(!"pacman" %in% rownames(installed.packages())) {
@@ -9,15 +6,15 @@ if(!"pacman" %in% rownames(installed.packages())) {
   }
 pacman::p_load(tidyverse, ggthemes, here, jsonlite)
 
+options(stringsAsFactors = FALSE)
 
 # Set default ggplot theme to tufte
 theme_set(ggthemes::theme_tufte())
 
-events_json <- fromJSON("./data/events/19725.json", simplifyVector = FALSE)
+## ----Data----------------------------------------------------------------
+events_json <- fromJSON("data/events/19725.json", simplifyVector = FALSE)
 
-events_json %>% View()
-length(events_json)
-
+## ----Extract-data--------------------------------------------------------
 replace_na_empty <- function(x) {
   map_if(x, is.null, ~ NA)
 }
@@ -54,6 +51,7 @@ goalkeeper_type_name <- map(events_json, ~ .x$goalkeeper$type$name) %>%
 goalkeeper_outcome_name <- map(events_json, ~ .x$goalkeeper$outcome$name) %>%
   replace_na_empty() %>% unlist()
 
+## ----events-df-----------------------------------------------------------
 events_df <- data.frame(
     event_id,
     type_id,
@@ -73,23 +71,21 @@ events_df <- data.frame(
   mutate(lead_possessor = possession_team_name == lead(possession_team_name)) %>%
   as_tibble()
 
-# Check index of all shots and then look back to see what lead to a shot.
-
+## ------------------------------------------------------------------------
 (shot_indexes <- which(str_detect(events_df$type_name, "Shot")))
 
-sequence_indexes <- vector("list", length(shot_indexes))
-
-for (i in seq_along(shot_indexes)) {
-  start_index <- ifelse(i == 1, 1, shot_indexes[i - 1] + 2)
-  sequence_indexes[[i]] <- seq(start_index, shot_indexes[i] + 1, 1)
-}
+## ----pass-sequences------------------------------------------------------
+sequence_indexes <- imap(shot_indexes, function(x, indx) {
+  start_index <- ifelse(x == shot_indexes[1], 1, shot_indexes[indx - 1] + 2)
+  seq(start_index, shot_indexes[indx] + 1, 1)
+  })
 
 shots_split <- map(sequence_indexes, ~ events_df %>% slice(min(.x):max(.x)))
 
 start_sequence <- map_int(shots_split, function(x) {
   x <- x %>% mutate(type_name_flag = ifelse(lag(type_name) == "Shot", "remove", "keep"))
   x <- x %>% filter(type_name_flag == "keep")
-  #' Check if `FALSE` exist and return max index of `FALSE`
+  #' Check if `FALSE` exist and return max index of `FALSE`; false indicates sequence has changed
   if (length(which(!x$lead_possessor)) >= 1) {
     as.integer(max(which(!x$lead_possessor)) + 2)
   } else {
@@ -115,44 +111,6 @@ pass_sequences <- map2(shots_split, start_sequence, ~ .x %>% slice(.y:nrow(.x)))
         lag(type_name) != "Shot" | is.na(lag(type_name)) ~ NA_character_,
         TRUE ~ "saved"
   ))
-
-pass_sequences %>%
-  select(pass_sequence_label, type_name, goalkeeper_outcome_name, goals) %>%
-  filter(!is.na(goals)) %>%
-  distinct(pass_sequence_label, goals)
-
-pass_sequences %>%
-  group_by(pass_sequence_label) %>%
-  slice(1:6) %>%
-  select(pass_sequence_label, everything())
-
-pass_sequences %>%
-  group_by(pass_sequence_label) %>%
-  count() %>%
-  ggplot(aes(fct_rev(fct_reorder(pass_sequence_label, n)), n)) +
-  geom_col() +
-  labs(title = "Event Count by Pass Sequence",
-       x = "Pass Sequence",
-       y = "Count")
-
-pass_sequences %>%
-  count(pass_sequence_label, type_name) %>%
-  filter(type_name == "Pass") %>%
-  ggplot(aes(fct_rev(fct_reorder(pass_sequence_label, n)), n)) +
-  geom_col() +
-  labs(title = "Pass Count by Pass Sequence",
-       x = "Pass Sequence",
-       y = "Count")
-
-
-
-
-
-
-
-
-
-
 
 
 
