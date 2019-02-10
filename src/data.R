@@ -17,6 +17,43 @@ game_num <- "19725"
 events_json <- fromJSON(paste0("data/events/", game_num, ".json"),
   simplifyVector = FALSE)
 
+all_dat <- data_frame(event_id = character(),
+                      type_id = integer(),
+                      type_name = character(),
+                      timestamp = character(),
+                      duration = numeric(),
+                      team_name = character(),
+                      possession_team_name = character(),
+                      play_pattern_name = character(),
+                      pass_length = numeric(),
+                      pass_height = character(),
+                      pass_angle = numeric(),
+                      goalkeeper_type_name = character(),
+                      goalkeeper_outcome_name = character(),
+                      loc_x = numeric(),
+                      loc_y = numeric(),
+                      shot_x = numeric(),
+                      shot_y = numeric(),
+                      shot_z = numeric(),
+                      shot_body_part = character(),
+                      shot_technique = character(),
+                      shot_outcome = character(),
+                      lead_possessor = logical(),
+                      pass_sequence_label = factor(),
+                      goals = character(),
+                      GameID = character())
+
+games <- sub("\\.json", "", list.files("./data/events"))
+
+pk_exclude <- c(7524, 7566, 7581, 7582, 7585, 8652, 8657)
+games_logged <- 0
+
+for( game in games[!games %in% pk_exclude]){
+
+  print(paste0("Game: ", game , " begin logging"))
+
+events_json <- fromJSON(paste0("data/events/", game, ".json"),
+                          simplifyVector = FALSE)
 ## ----Extract-data--------------------------------------------------------
 replace_na_empty <- function(x) {
   map_if(x, is.null, ~ NA)
@@ -115,6 +152,8 @@ events_df <- data.frame(
   mutate(lead_possessor = possession_team_name == lead(possession_team_name)) %>%
   as_tibble()
 
+
+
 ## ------------------------------------------------------------------------
 (shot_indexes <- which(str_detect(events_df$type_name, "Shot")))
 
@@ -155,6 +194,20 @@ pass_sequences <- map2(shots_split, start_sequence, ~ .x %>% slice(.y:nrow(.x)))
         lag(type_name) != "Shot" | is.na(lag(type_name)) ~ NA_character_,
         TRUE ~ "saved"
   ))
+
+pass_sequences$GameID <- game
+
+all_dat <- all_dat %>%
+  bind_rows(pass_sequences)
+
+games_logged <- games_logged + 1
+print(paste0("Game: ", game , " logging complete", " - ", games_logged, " total games logged"))
+
+}
+
+
+
+
 
 
 
