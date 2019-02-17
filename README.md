@@ -1,4 +1,4 @@
-#Sports Analytics
+# Sports Analytics
 
 # World Cup Machine Learning
 
